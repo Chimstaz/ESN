@@ -137,13 +137,33 @@ class ESN(object):
         return y[:,1]
 
 
+
+def lorenz(x, y, z, s, r, b):
+    x1 = s * (y - x)
+    y1 = x * (r - z) - y
+    z1 = x * y - b * z
+    return (x1, y1, z1)
+
 if __name__ == '__main__':
     
+
+    # dane treningowe
+    data = [[0., 1., 1.05]]
+    s = 10
+    r = 28
+    b = 2.667
+    dt = 0.01
+    for i in range(10000):
+        y = lorenz(data[-1][0], data[-1][1], data[-1][2], s, r, b)
+        data.append([data[-1][0] + dt * y[0],
+                     data[-1][1] + dt * y[1],
+                     data[-1][2] + dt * y[2]])
+    data = np.array(data)
     # load the data
-    data = np.loadtxt(r'data\MackeyGlass_t50.txt')
-    data = MinMaxScaler(feature_range=(-0.3, 0.3)).fit_transform(data)
-    noise = 0.1 # add n.d. noise
-    data += noise * np.std(data) * np.random.randn(len(data))
+    #data = np.loadtxt(r'data/MackeyGlass_t50.txt')
+    #data = MinMaxScaler(feature_range=(-0.3, 0.3)).fit_transform(data)
+    #noise = 0.1 # add n.d. noise
+    #data += noise * np.std(data) * np.random.randn(len(data))
     
     trainLen = 8000
     testLen = 1000
@@ -151,10 +171,10 @@ if __name__ == '__main__':
     
     X = data[0:trainLen]
     y = data[dif:trainLen+dif]
-    y_p = map(lambda x: 1 if x else 0, data[dif:trainLen+dif] > data[0:trainLen])
+    #y_p = map(lambda x: 1 if x else 0, data[dif:trainLen+dif][0] > data[0:trainLen][0])
     Xtest = data[trainLen:trainLen+testLen]
     ytest = data[trainLen+dif:trainLen+testLen+dif]
-    ytest_p = map(lambda x: 1 if x else 0, data[trainLen+dif:trainLen+testLen+dif] > data[trainLen:trainLen+testLen])
+    #ytest_p = map(lambda x: 1 if x else 0, data[trainLen+dif:trainLen+testLen+dif][0] > data[trainLen:trainLen+testLen][0])
     
     resSize = 500
     rho = 0.9  # spectral radius
@@ -165,21 +185,21 @@ if __name__ == '__main__':
     esn = ESN(resSize=resSize, rho=rho, cr=cr, leaking_rate=leaking_rate)
     
     esn.fit(X, y, initLen=initLen, lmbd=lmbd)
-    esn.fit_proba(X, y_p, initLen=initLen, lmbd=lmbd, init_states=False)
+    #esn.fit_proba(X, y_p, initLen=initLen, lmbd=lmbd, init_states=False)
     y_predicted = esn.predict(Xtest)
-    y_predicted_p = esn.predict_proba(Xtest, init_states=False)
+    #y_predicted_p = esn.predict_proba(Xtest, init_states=False)
     
     # compute metrics
     errorLen = testLen
     mse = mean_squared_error(ytest[0:errorLen], y_predicted[0:errorLen])
-    auc = roc_auc_score(ytest_p[0:errorLen], y_predicted_p[0:errorLen])
-    fpr, tpr, _ = roc_curve(ytest_p[0:errorLen], y_predicted_p[0:errorLen])
-    y_predicted_lab = np.zeros(len(y_predicted_p))
-    y_predicted_lab[ y_predicted_p >= 0.5] = 1
-    acc = accuracy_score(ytest_p[0:errorLen], y_predicted_lab[0:errorLen])
+    #auc = roc_auc_score(ytest_p[0:errorLen], y_predicted_p[0:errorLen])
+    #fpr, tpr, _ = roc_curve(ytest_p[0:errorLen], y_predicted_p[0:errorLen])
+    #y_predicted_lab = np.zeros(len(y_predicted_p))
+    #y_predicted_lab[ y_predicted_p >= 0.5] = 1
+    #acc = accuracy_score(ytest_p[0:errorLen], y_predicted_lab[0:errorLen])
     
     print("Ridge regression MSE = {}".format(mse))
-    print("Logistic regression AUC = {}, Accuracy = {}.".format(auc, acc))
+    #print("Logistic regression AUC = {}, Accuracy = {}.".format(auc, acc))
     
     
     ####################################################################### 
@@ -201,8 +221,8 @@ if __name__ == '__main__':
     # Plot of a ROC curve
     plt.figure(3).clear()
     lw = 2
-    plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % auc)
+    #plt.plot(fpr, tpr, color='darkorange',
+    #         lw=lw, label='ROC curve (area = %0.2f)' % auc)
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
