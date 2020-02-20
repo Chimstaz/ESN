@@ -153,7 +153,7 @@ if __name__ == '__main__':
     r = 28
     b = 2.667
     dt = 0.01
-    for i in range(10000):
+    for i in range(16000):
         y = lorenz(data[-1][0], data[-1][1], data[-1][2], s, r, b)
         data.append([data[-1][0] + dt * y[0],
                      data[-1][1] + dt * y[1],
@@ -162,10 +162,10 @@ if __name__ == '__main__':
     # load the data
     #data = np.loadtxt(r'data/MackeyGlass_t50.txt')
     #data = MinMaxScaler(feature_range=(-0.3, 0.3)).fit_transform(data)
-    #noise = 0.1 # add n.d. noise
-    #data += noise * np.std(data) * np.random.randn(len(data))
+    noise = 0.01 # add n.d. noise
+    data += noise * np.std(data) * np.random.randn(len(data), 3)
     
-    trainLen = 8000
+    trainLen = 14000
     testLen = 1000
     dif = 46  # prediction horizon >=1
     
@@ -187,6 +187,13 @@ if __name__ == '__main__':
     esn.fit(X, y, initLen=initLen, lmbd=lmbd)
     #esn.fit_proba(X, y_p, initLen=initLen, lmbd=lmbd, init_states=False)
     y_predicted = esn.predict(Xtest)
+    pred_range = 0
+    for i in range(pred_range):
+        Xtest = np.concatenate((Xtest[dif:], y_predicted[-dif:]), axis=0)
+        y_predicted = esn.predict(Xtest)
+        #y_predicted = np.concatenate((y_predicted[dif:], y_predicted2[-dif:]), axis=0)
+    ytest = data[trainLen+dif*(pred_range+1):trainLen+testLen+dif*(pred_range+1)]
+    
     #y_predicted_p = esn.predict_proba(Xtest, init_states=False)
     
     # compute metrics
@@ -211,7 +218,7 @@ if __name__ == '__main__':
     
     plt.figure(1).clear()
     plt.plot( ytest, 'g', y_predicted, 'b')
-    plt.title('Predicting {} steps ahead. MSE = {:7.5f}'.format(dif,mse))
+    plt.title('Predicting {} steps ahead. MSE = {:7.5f}'.format(dif*(pred_range+1),mse))
     plt.legend(['Target signal', 'Ridge regression'], loc="upper right")
     
     plt.figure(2).clear()
@@ -233,7 +240,7 @@ if __name__ == '__main__':
     
     plt.show()
     
-    
+    exit(0) 
     #######################################################################
     # Esperiments with prediction horizon
     
